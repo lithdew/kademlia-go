@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lithdew/kademlia"
 	"github.com/lithdew/reliable"
 	"log"
 	"math"
@@ -40,10 +41,10 @@ func readLoop(pc net.PacketConn, c *reliable.Conn) {
 func main() {
 	log.SetFlags(0)
 
-	pa, err := NewProtocol()
+	pa, err := kademlia.NewProtocol()
 	check(err)
 
-	pb, err := NewProtocol()
+	pb, err := kademlia.NewProtocol()
 	check(err)
 
 	ca, err := net.ListenPacket("udp", "127.0.0.1:0")
@@ -69,8 +70,8 @@ func main() {
 	go a.Run()
 	go b.Run()
 
-	log.Printf("A (addr=%q) (pub=%q) (priv=%q)", ca.LocalAddr(), pa.pub, pa.priv.Seed())
-	log.Printf("B (addr=%q) (pub=%q) (priv=%q)", cb.LocalAddr(), pb.pub, pb.priv.Seed())
+	log.Printf("A (addr=%q) (pub=%q) (priv=%q)", ca.LocalAddr(), pa.PublicKey(), pa.PrivateKey().Seed())
+	log.Printf("B (addr=%q) (pub=%q) (priv=%q)", cb.LocalAddr(), pb.PublicKey(), pb.PrivateKey().Seed())
 
 	defer func() {
 		check(ca.SetDeadline(time.Now().Add(1 * time.Millisecond)))
@@ -83,12 +84,12 @@ func main() {
 		check(cb.Close())
 	}()
 
-	pkt := HandshakePacket{
-		Node:      pa.pub,
-		Signature: pa.priv.Sign(append(ZeroPublicKey[:], pa.hm...)),
-	}
+	//pkt := kademlia.HandshakePacket{
+	//	Node:      pa.PublicKey(),
+	//	Signature: pa.PrivateKey().Sign(append(kademlia.ZeroPublicKey[:], pa.hm...)),
+	//}
 
-	check(a.WriteReliablePacket(pkt.AppendTo(nil)))
+	//check(a.WriteReliablePacket(pkt.AppendTo(nil)))
 
 	time.Sleep(100 * time.Millisecond)
 }

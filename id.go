@@ -1,4 +1,4 @@
-package main
+package kademlia
 
 import (
 	"crypto"
@@ -124,7 +124,7 @@ func (id NodeID) String() string    { return hex.EncodeToString(id[:]) }
 func (id NodeID) Zero() bool        { return id == ZeroNodeID }
 func (id NodeID) Valid(c1 int) bool { p := blake2b.Sum256(id[:]); return leadingZeros(p[:]) >= c1 }
 
-// GenerateX takes O(2^c2)
+// GenerateX takes O(2^c2).
 func (id NodeID) GenerateX(r io.Reader, c2 int) (x X, err error) {
 	for {
 		_, err = io.ReadFull(r, x[:])

@@ -1,4 +1,4 @@
-package main
+package kademlia
 
 import (
 	"fmt"
@@ -11,11 +11,7 @@ const (
 	DefaultC2 = 10
 )
 
-var DefaultHandshake = []byte("hello world")
-
 type Protocol struct {
-	hm []byte // message to sign for handshaking
-
 	c1 int // s/kademlia static puzzle c1
 	c2 int // s/kademlia dynamic puzzle c2
 
@@ -28,6 +24,9 @@ type Protocol struct {
 	setup bool // have we already handshaked with this peer?
 }
 
+func (p Protocol) PublicKey() PublicKey   { return p.pub }
+func (p Protocol) PrivateKey() PrivateKey { return p.priv }
+
 func NewProtocol() (*Protocol, error) {
 	p := &Protocol{}
 	if p.c1 == 0 {
@@ -35,9 +34,6 @@ func NewProtocol() (*Protocol, error) {
 	}
 	if p.c2 == 0 {
 		p.c2 = DefaultC2
-	}
-	if p.hm == nil {
-		p.hm = DefaultHandshake
 	}
 	if !p.priv.Zero() && p.pub.Zero() {
 		p.pub = p.priv.Public()
@@ -69,7 +65,7 @@ func (p *Protocol) Read(buf []byte, addr net.Addr) error {
 
 func (p *Protocol) Handshake(packet HandshakePacket, addr net.Addr) error {
 	spew.Dump(packet)
-	if !packet.Signature.Verify(packet.Node, append(packet.Session[:], p.hm...)) {
+	if !packet.Signature.Verify(packet.Node, packet.Session[:]) {
 		return fmt.Errorf("%s: invalid signature on handshake packet", addr)
 	}
 	p.setup = true
