@@ -34,6 +34,20 @@ func (t *Table) Len() int {
 	return t.len
 }
 
+// O(bucket_size) complexity.
+func (t *Table) Delete(pub PublicKey) bool {
+	bkt := t.bkts[t.bucketIndex(pub)]
+	for e := bkt.Front(); e != nil; e = e.Next() {
+		if e.Value.(ID).Pub == pub {
+			bkt.Remove(e)
+			t.len--
+			return true
+		}
+	}
+	return false
+}
+
+// O(bucket_size) complexity.
 func (t *Table) Update(id ID) {
 	if t.id.Pub == id.Pub {
 		return
@@ -53,6 +67,7 @@ func (t *Table) Update(id ID) {
 	return
 }
 
+// O(min(k, bucket_size * num_buckets)) complexity.
 func (t *Table) ClosestTo(pub PublicKey, k int) []ID {
 	if k > t.len {
 		k = t.len
