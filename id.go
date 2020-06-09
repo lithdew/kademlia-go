@@ -3,6 +3,7 @@ package kademlia
 import (
 	"crypto"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/lithdew/bytesutil"
 	"github.com/oasislabs/ed25519"
@@ -21,7 +22,8 @@ const (
 	SizeNodeID = 32
 	SizeX      = SizeNodeID
 
-	SizeID = SizePublicKey + net.IPv6len + 2
+	MinSizeID = SizePublicKey + 1 + net.IPv4len + 2
+	MaxSizeID = SizePublicKey + 1 + net.IPv6len + 2
 )
 
 type (
@@ -50,20 +52,43 @@ type ID struct {
 	Port uint16    `json:"port"`
 }
 
+func (h ID) Validate() error {
+	if len(h.Host) != net.IPv4len && len(h.Host) != net.IPv6len {
+		return fmt.Errorf("node host is not valid ipv4 or ipv6: host ip is %d byte(s)", len(h.Host))
+	}
+	if h.Port == 0 {
+		return errors.New("node port cannot be 0")
+	}
+	return nil
+}
+
 func (id ID) AppendTo(dst []byte) []byte {
 	dst = append(dst, id.Pub[:]...)
-	dst = append(dst, bytesutil.ExtendSlice(id.Host, net.IPv6len)...)
+	if len(id.Host) == net.IPv4len {
+		dst = append(dst, 0)
+	} else {
+		dst = append(dst, 1)
+	}
+	dst = append(dst, id.Host...)
 	dst = bytesutil.AppendUint16BE(dst, id.Port)
 	return dst
 }
 
 func UnmarshalID(buf []byte) (ID, []byte, error) {
 	var id ID
-	if len(buf) < SizeID {
+	if len(buf) < MinSizeID {
 		return id, buf, io.ErrUnexpectedEOF
 	}
 	id.Pub, buf = *(*PublicKey)(unsafe.Pointer(&((buf[:SizePublicKey])[0]))), buf[SizePublicKey:]
-	id.Host, buf = buf[:net.IPv6len], buf[net.IPv6len:]
+	ipv4, buf := buf[0] == 0, buf[1:]
+	if (ipv4 && len(buf) < net.IPv4len+2) || (!ipv4 && len(buf) < net.IPv6len+2) {
+		return id, buf, io.ErrUnexpectedEOF
+	}
+	if ipv4 {
+		id.Host, buf = buf[:net.IPv4len], buf[net.IPv4len:]
+	} else {
+		id.Host, buf = buf[:net.IPv6len], buf[net.IPv6len:]
+	}
 	id.Port, buf = bytesutil.Uint16BE(buf[:2]), buf[2:]
 	return id, buf, nil
 }

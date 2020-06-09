@@ -65,7 +65,7 @@ func (p *Protocol) Read(buf []byte, addr net.Addr) error {
 
 func (p *Protocol) Handshake(packet HandshakePacket, addr net.Addr) error {
 	spew.Dump(packet)
-	if !packet.Signature.Verify(packet.Node, packet.Session[:]) {
+	if !packet.Signature.Verify(packet.PublicKey, packet.SessionKey[:]) {
 		return fmt.Errorf("%s: invalid signature on handshake packet", addr)
 	}
 	p.setup = true
