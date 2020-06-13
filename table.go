@@ -30,6 +30,7 @@ func (t *Table) bucketIndex(pub PublicKey) int {
 	return leadingZeros(xor(nil, pub[:], t.id.Pub[:]))
 }
 
+// Len returns the number of entries in this table.
 func (t *Table) Len() int {
 	return t.len
 }

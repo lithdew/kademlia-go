@@ -81,13 +81,16 @@ func UnmarshalID(buf []byte) (ID, []byte, error) {
 	}
 	id.Pub, buf = *(*PublicKey)(unsafe.Pointer(&((buf[:SizePublicKey])[0]))), buf[SizePublicKey:]
 	ipv4, buf := buf[0] == 0, buf[1:]
-	if (ipv4 && len(buf) < net.IPv4len+2) || (!ipv4 && len(buf) < net.IPv6len+2) {
-		return id, buf, io.ErrUnexpectedEOF
-	}
-	if ipv4 {
-		id.Host, buf = buf[:net.IPv4len], buf[net.IPv4len:]
+	if ipv4 && len(buf) >= net.IPv4len+2 {
+		id.Host = make([]byte, net.IPv4len)
+		copy(id.Host, buf[:net.IPv4len])
+		buf = buf[net.IPv4len:]
+	} else if !ipv4 && len(buf) >= net.IPv6len+2 {
+		id.Host = make([]byte, net.IPv6len)
+		copy(id.Host, buf[:net.IPv6len])
+		buf = buf[net.IPv6len:]
 	} else {
-		id.Host, buf = buf[:net.IPv6len], buf[net.IPv6len:]
+		return id, buf, fmt.Errorf("host is malformed: %w", io.ErrUnexpectedEOF)
 	}
 	id.Port, buf = bytesutil.Uint16BE(buf[:2]), buf[2:]
 	return id, buf, nil
