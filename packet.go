@@ -55,7 +55,7 @@ func UnmarshalFindNodeRequest(buf []byte) (FindNodeRequest, []byte, error) {
 }
 
 type FindNodeResponse struct {
-	Closest []ID
+	Closest []ID `json:"closest"`
 }
 
 func (r FindNodeResponse) AppendTo(dst []byte) []byte {
