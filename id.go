@@ -44,6 +44,8 @@ var (
 
 	ZeroNodeID NodeID
 	ZeroX      X
+
+	ZeroID ID
 )
 
 type ID struct {
