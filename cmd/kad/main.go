@@ -84,7 +84,7 @@ func main() {
 		check(cb.Close())
 	}()
 
-	//pkt := kademlia.HandshakePacket{
+	//pkt := kademlia.HandshakeRequest{
 	//	Node:      pa.PublicKey(),
 	//	Signature: pa.PrivateKey().Sign(append(kademlia.ZeroPublicKey[:], pa.hm...)),
 	//}

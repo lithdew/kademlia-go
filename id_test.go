@@ -19,9 +19,9 @@ func TestGeneratePuzzleKeys(t *testing.T) {
 func TestHandshakePacket(t *testing.T) {
 	var buf []byte
 
-	f := func(expected HandshakePacket) bool {
-		actual, err := UnmarshalHandshakePacket(expected.AppendTo(buf[:0]))
-		return assert.EqualValues(t, expected, actual) && assert.NoError(t, err)
+	f := func(expected HandshakeRequest) bool {
+		actual, buf, err := UnmarshalHandshakeRequest(expected.AppendTo(buf[:0]))
+		return assert.EqualValues(t, expected, actual) && assert.Len(t, buf, 0) && assert.NoError(t, err)
 	}
 
 	require.NoError(t, quick.Check(f, nil))
