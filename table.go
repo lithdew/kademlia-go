@@ -116,5 +116,5 @@ func (t Table) ClosestTo(pub PublicKey, k int) []ID {
 		l, r = l-1, r+1
 	}
 
-	return SortIDs(t.id, closest)
+	return SortIDs(t.id.Pub, closest)
 }

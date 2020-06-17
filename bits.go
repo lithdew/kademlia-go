@@ -29,8 +29,8 @@ func xor(dst, a, b []byte) []byte {
 	return dst
 }
 
-func SortIDs(id ID, ids []ID) []ID {
-	dst := func(idx int) []byte { return xor(nil, ids[idx].Pub[:], id.Pub[:]) }
+func SortIDs(pub PublicKey, ids []ID) []ID {
+	dst := func(idx int) []byte { return xor(nil, ids[idx].Pub[:], pub[:]) }
 	cmp := func(i, j int) bool { return bytes.Compare(dst(i), dst(j)) == -1 }
 	sort.Slice(ids, cmp)
 	return ids
