@@ -41,7 +41,11 @@ func TestTable(t *testing.T) {
 
 			require.EqualValues(t, UpdateNew, table.Update(id))
 		}
+
 		require.EqualValues(t, table.cap, table.buckets[bucket].Len())
+		for _, id := range ids {
+			require.True(t, table.Has(id.Pub))
+		}
 
 		require.ElementsMatch(t, ids, table.ClosestTo(table.id.Pub, table.cap))
 

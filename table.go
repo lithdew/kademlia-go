@@ -26,29 +26,11 @@ func NewTable(id ID) *Table {
 	return t
 }
 
-func (t *Table) bucketIndex(pub PublicKey) int {
+func (t Table) bucketIndex(pub PublicKey) int {
 	if pub == t.id.Pub {
 		return 0
 	}
 	return leadingZeros(xor(nil, pub[:], t.id.Pub[:]))
-}
-
-// Len returns the number of entries in this table.
-func (t *Table) Len() int {
-	return t.len
-}
-
-// O(bucket_size) complexity.
-func (t *Table) Delete(pub PublicKey) bool {
-	bucket := t.buckets[t.bucketIndex(pub)]
-	for e := bucket.Front(); e != nil; e = e.Next() {
-		if e.Value.(ID).Pub == pub {
-			bucket.Remove(e)
-			t.len--
-			return true
-		}
-	}
-	return false
 }
 
 type UpdateResult int
@@ -80,8 +62,37 @@ func (t *Table) Update(id ID) UpdateResult {
 	return UpdateFull
 }
 
+// O(bucket_size) complexity.
+func (t *Table) Delete(pub PublicKey) bool {
+	bucket := t.buckets[t.bucketIndex(pub)]
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if e.Value.(ID).Pub == pub {
+			bucket.Remove(e)
+			t.len--
+			return true
+		}
+	}
+	return false
+}
+
+// Len returns the number of entries in this table.
+func (t Table) Len() int {
+	return t.len
+}
+
+// Has returns true if this table has pub.
+func (t Table) Has(pub PublicKey) bool {
+	bucket := t.buckets[t.bucketIndex(pub)]
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if e.Value.(ID).Pub == pub {
+			return true
+		}
+	}
+	return false
+}
+
 // O(min(k, bucket_size * num_buckets)) complexity.
-func (t *Table) ClosestTo(pub PublicKey, k int) []ID {
+func (t Table) ClosestTo(pub PublicKey, k int) []ID {
 	if k > t.len {
 		k = t.len
 	}
