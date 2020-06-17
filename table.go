@@ -12,13 +12,13 @@ type Table struct {
 	cap int // capacity of peer id bucket
 	len int // number of peer ids stored
 
-	bkts [SizeTable]*list.List // peer id buckets
+	buckets [SizeTable]*list.List // peer id buckets
 }
 
 func NewTable(id ID) *Table {
 	t := &Table{id: id}
-	for i := range t.bkts {
-		t.bkts[i] = list.New()
+	for i := range t.buckets {
+		t.buckets[i] = list.New()
 	}
 	if t.cap == 0 {
 		t.cap = DefaultBucketSize
@@ -27,6 +27,9 @@ func NewTable(id ID) *Table {
 }
 
 func (t *Table) bucketIndex(pub PublicKey) int {
+	if pub == t.id.Pub {
+		return 0
+	}
 	return leadingZeros(xor(nil, pub[:], t.id.Pub[:]))
 }
 
@@ -37,10 +40,10 @@ func (t *Table) Len() int {
 
 // O(bucket_size) complexity.
 func (t *Table) Delete(pub PublicKey) bool {
-	bkt := t.bkts[t.bucketIndex(pub)]
-	for e := bkt.Front(); e != nil; e = e.Next() {
+	bucket := t.buckets[t.bucketIndex(pub)]
+	for e := bucket.Front(); e != nil; e = e.Next() {
 		if e.Value.(ID).Pub == pub {
-			bkt.Remove(e)
+			bucket.Remove(e)
 			t.len--
 			return true
 		}
@@ -48,24 +51,33 @@ func (t *Table) Delete(pub PublicKey) bool {
 	return false
 }
 
+type UpdateResult int
+
+const (
+	UpdateNew UpdateResult = iota
+	UpdateOk
+	UpdateFull
+	UpdateFail
+)
+
 // O(bucket_size) complexity.
-func (t *Table) Update(id ID) {
+func (t *Table) Update(id ID) UpdateResult {
 	if t.id.Pub == id.Pub {
-		return
+		return UpdateFail
 	}
-	bkt := t.bkts[t.bucketIndex(id.Pub)]
-	for e := bkt.Front(); e != nil; e = e.Next() {
+	bucket := t.buckets[t.bucketIndex(id.Pub)]
+	for e := bucket.Front(); e != nil; e = e.Next() {
 		if e.Value.(ID).Pub == id.Pub {
-			bkt.MoveToFront(e)
-			return
+			bucket.MoveToFront(e)
+			return UpdateOk
 		}
 	}
-	if bkt.Len() < t.cap {
-		bkt.PushFront(id)
+	if bucket.Len() < t.cap {
+		bucket.PushFront(id)
 		t.len++
-		return
+		return UpdateNew
 	}
-	return
+	return UpdateFull
 }
 
 // O(min(k, bucket_size * num_buckets)) complexity.
@@ -77,7 +89,7 @@ func (t *Table) ClosestTo(pub PublicKey, k int) []ID {
 	closest := make([]ID, 0, k)
 
 	fill := func(i int) bool {
-		for e := t.bkts[i].Front(); len(closest) < k && e != nil; e = e.Next() {
+		for e := t.buckets[i].Front(); len(closest) < k && e != nil; e = e.Next() {
 			if id := e.Value.(ID); id.Pub != pub {
 				closest = append(closest, id)
 			}
@@ -89,7 +101,7 @@ func (t *Table) ClosestTo(pub PublicKey, k int) []ID {
 	l, r := m-1, m+1
 
 	fill(m)
-	for (l >= 0 && fill(l)) || (r < len(t.bkts) && fill(r)) {
+	for (l >= 0 && fill(l)) || (r < len(t.buckets) && fill(r)) {
 		l, r = l-1, r+1
 	}
 

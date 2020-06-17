@@ -64,10 +64,13 @@ func (h ID) Validate() error {
 
 func (id ID) AppendTo(dst []byte) []byte {
 	dst = append(dst, id.Pub[:]...)
-	if len(id.Host) == net.IPv4len {
+	if len(id.Host) == 0 || len(id.Host) == net.IPv4len {
 		dst = append(dst, 0)
 	} else {
 		dst = append(dst, 1)
+	}
+	if len(id.Host) == 0 {
+		id.Host = make(net.IP, net.IPv4len)
 	}
 	dst = append(dst, id.Host...)
 	dst = bytesutil.AppendUint16BE(dst, id.Port)
