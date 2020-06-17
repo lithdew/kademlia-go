@@ -8,15 +8,15 @@ const (
 )
 
 type Table struct {
-	id  ID  // node id
+	pub PublicKey
 	cap int // capacity of peer id bucket
 	len int // number of peer ids stored
 
 	buckets [SizeTable]*list.List // peer id buckets
 }
 
-func NewTable(id ID) *Table {
-	t := &Table{id: id}
+func NewTable(id PublicKey) *Table {
+	t := &Table{pub: id}
 	for i := range t.buckets {
 		t.buckets[i] = list.New()
 	}
@@ -27,10 +27,10 @@ func NewTable(id ID) *Table {
 }
 
 func (t Table) bucketIndex(pub PublicKey) int {
-	if pub == t.id.Pub {
+	if pub == t.pub {
 		return 0
 	}
-	return leadingZeros(xor(nil, pub[:], t.id.Pub[:]))
+	return leadingZeros(xor(nil, pub[:], t.pub[:]))
 }
 
 type UpdateResult int
@@ -44,7 +44,7 @@ const (
 
 // O(bucket_size) complexity.
 func (t *Table) Update(id ID) UpdateResult {
-	if t.id.Pub == id.Pub {
+	if t.pub == id.Pub {
 		return UpdateFail
 	}
 	bucket := t.buckets[t.bucketIndex(id.Pub)]
@@ -116,5 +116,5 @@ func (t Table) ClosestTo(pub PublicKey, k int) []ID {
 		l, r = l-1, r+1
 	}
 
-	return SortIDs(t.id.Pub, closest)
+	return SortIDs(t.pub, closest)
 }

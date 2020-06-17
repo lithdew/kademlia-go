@@ -47,7 +47,7 @@ func NewProtocol() (*Protocol, error) {
 		p.priv = priv
 	}
 	p.id = ID{Pub: p.pub}
-	p.table = NewTable(p.id)
+	p.table = NewTable(p.pub)
 	return p, nil
 }
 

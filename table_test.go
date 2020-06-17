@@ -30,8 +30,7 @@ func genBucketPub(t testing.TB, table *Table, idx int) PublicKey {
 }
 
 func TestTable(t *testing.T) {
-	id := ID{Pub: genPub(t)}
-	table := NewTable(id)
+	table := NewTable(genPub(t))
 
 	for bucket := 0; bucket < 2; bucket++ {
 		ids := make([]ID, 0, table.cap)
@@ -47,7 +46,7 @@ func TestTable(t *testing.T) {
 			require.True(t, table.Has(id.Pub))
 		}
 
-		require.ElementsMatch(t, ids, table.ClosestTo(table.id.Pub, table.cap))
+		require.ElementsMatch(t, ids, table.ClosestTo(table.pub, table.cap))
 
 		for _, id := range ids {
 			require.True(t, table.Delete(id.Pub))
