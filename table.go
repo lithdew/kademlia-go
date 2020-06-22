@@ -99,22 +99,32 @@ func (t Table) ClosestTo(pub PublicKey, k int) []ID {
 
 	closest := make([]ID, 0, k)
 
-	fill := func(i int) bool {
-		for e := t.buckets[i].Front(); len(closest) < k && e != nil; e = e.Next() {
+	fill := func(i int) {
+		for e := t.buckets[i].Front(); e != nil; e = e.Next() {
 			if id := e.Value.(ID); id.Pub != pub {
 				closest = append(closest, id)
 			}
 		}
-		return len(closest) < k
 	}
 
 	m := t.bucketIndex(pub)
-	l, r := m-1, m+1
 
 	fill(m)
-	for (l >= 0 && fill(l)) || (r < len(t.buckets) && fill(r)) {
-		l, r = l-1, r+1
+
+	for i := 1; len(closest) < k && (m-i >= 0 || m+i < len(t.buckets)); i++ {
+		if m-i >= 0 {
+			fill(m - i)
+		}
+		if m+i < len(t.buckets) {
+			fill(m + i)
+		}
 	}
 
-	return SortIDs(t.pub, closest)
+	closest = SortIDs(t.pub, closest)
+
+	if len(closest) > k {
+		closest = closest[:k]
+	}
+
+	return closest
 }
